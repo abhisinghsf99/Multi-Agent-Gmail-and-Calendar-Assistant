@@ -1,0 +1,525 @@
+{
+  "name": "Multi-Agent Gmail & Calendar Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -32,
+        0
+      ],
+      "id": "237a043a-6659-45b9-b7c7-6ab6086da6a1",
+      "name": "When chat message received",
+      "webhookId": "11d87f04-2c56-4640-a486-bf742f517102"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        112,
+        176
+      ],
+      "id": "21c8791a-66ba-4646-a6f9-7cbbbff20966",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "TrEjd7l5Ytu3PQ1e",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        256,
+        176
+      ],
+      "id": "4fbcebf9-94f1-4e0a-b30c-b76c309a32b8",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', `Always refer yourself as Your-Name (signature at the bottom of email)`, 'string') }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        992,
+        368
+      ],
+      "id": "d3da8213-194f-4e95-97ee-3a48c6032870",
+      "name": "Send an email in Gmail",
+      "webhookId": "9697ffa2-737b-4d32-94e5-a7c7f154e57f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "yAZRHDzF5XEZtHf8",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 10,
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        832,
+        368
+      ],
+      "id": "c6d9ab7f-edb9-40a7-a579-377909d3e60e",
+      "name": "Get many messages in Gmail",
+      "webhookId": "06bba0be-3f53-438e-b98e-fcd85ca4b9fa",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "yAZRHDzF5XEZtHf8",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_ID', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        1152,
+        368
+      ],
+      "id": "a6dd7a7f-0627-469e-869c-b6925dc78c4a",
+      "name": "Reply to a message in Gmail",
+      "webhookId": "487c6f11-cc10-4b1c-adbb-849a54824f51",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "yAZRHDzF5XEZtHf8",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are an orchestrator agent that routes user requests to specialized sub-agents. Your job is to understand intent, delegate to the right tool(s), and return a clean, consolidated response to the user.\n\n## Context\n- Current date and time: {{ $now.setZone('America/Los_Angeles').toFormat('cccc, LLLL d, yyyy HH:mm ZZZZ') }}\n- User timezone: America/Los_Angeles\n\n## Available tools\n- **Gmail AI Agent**: Send, reply to, retrieve, and delete emails in Gmail. Use for anything involving email content, threads, or recipients.\n- **Calendar AI Agent**: Create, edit, delete, and retrieve events in Google Calendar. Use for scheduling, availability checks, and event management.\n\n## Routing rules\n1. Identify the user's intent before calling any tool.\n2. If the request spans multiple domains (e.g., \"check my calendar for Friday and email the details to John\"), call tools in sequence and pass results between them.\n3. If the request is ambiguous, ask one clarifying question before acting — don't guess.\n4. If no tool is needed (small talk, clarification, confirming past actions), respond directly.\n5. Never fabricate data. If a tool returns nothing useful, say so.\n\n## Response style\n- Be concise. Summarize tool outputs; don't dump raw JSON.\n- Confirm actions taken (e.g., \"Sent email to X\" or \"Created event for tomorrow 3 PM\").\n- For multi-step tasks, briefly state what you did at each step.\n\n## Constraints\n- Always resolve relative dates (\"tomorrow\", \"next Friday\") into absolute dates before passing to the Calendar AI Agent.\n- For destructive actions (deleting events, sending emails, deleting emails), confirm with the user first unless they explicitly said to proceed."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "3507bf7c-50b3-4658-937a-b96d6cf79b0b",
+      "name": "AI Agent Manager"
+    },
+    {
+      "parameters": {
+        "toolDescription": "AI Agent that uses email tools and does email tasks",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        784,
+        160
+      ],
+      "id": "509a75e0-7ec9-4321-8d65-eee9750a6dc8",
+      "name": "Gmail AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        672,
+        368
+      ],
+      "id": "6c544301-8714-44e6-b693-d2499da27094",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "TrEjd7l5Ytu3PQ1e",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        128,
+        496
+      ],
+      "id": "b8b077dd-1640-4b08-9cd4-e9ccaaa9498d",
+      "name": "Groq Chat Model2",
+      "credentials": {
+        "groqApi": {
+          "id": "TrEjd7l5Ytu3PQ1e",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "AI Agent that has access to my google calendar, and can edit my calendar.",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        256,
+        368
+      ],
+      "id": "944d5608-bf42-42a0-9c55-c37343fb9f73",
+      "name": "Calendar AI Agent"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "id"
+        },
+        "limit": 10,
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        416,
+        576
+      ],
+      "id": "04a5b085-b3d8-4b24-9e82-4572bf3a3ffb",
+      "name": "Get many events in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "cx2e91dduB5dzzDl",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "id"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        576,
+        576
+      ],
+      "id": "1c577c43-9a72-44b8-9eb8-2d8abb9da9b4",
+      "name": "Create an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "cx2e91dduB5dzzDl",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "id"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        256,
+        576
+      ],
+      "id": "fffc3dbe-8d21-4ff6-a29b-f7f859c0b699",
+      "name": "Delete an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "cx2e91dduB5dzzDl",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "id"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "useDefaultReminders": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Use_Default_Reminders', ``, 'boolean') }}",
+        "updateFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        736,
+        576
+      ],
+      "id": "b818068b-b968-484f-96f0-2172b456d480",
+      "name": "Update an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "cx2e91dduB5dzzDl",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "messageId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_ID', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        1312,
+        368
+      ],
+      "id": "e11f9e47-dae0-4d8a-8839-90ba7c723840",
+      "name": "Delete a message in Gmail",
+      "webhookId": "4c9d81d9-a65c-49ec-8ac0-197e0635883a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "yAZRHDzF5XEZtHf8",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Manager",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent Manager",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an email in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Gmail AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many messages in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Gmail AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Gmail AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail AI Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Gmail AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Calendar AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar AI Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Gmail AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Manager": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "timezone": "America/Los_Angeles"
+  },
+  "versionId": "39282718-273b-4bdc-acaa-89063efe9f25",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": ""
+  },
+  "nodeGroups": [],
+  "id": "sE7GTvjhylhwVoW6",
+  "tags": []
+}
