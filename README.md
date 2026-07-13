@@ -2,8 +2,7 @@
 
 Multi-agent system built in n8n. Chat in natural language to manage your inbox and calendar. A Groq-powered orchestrator agent interprets intent and delegates to two specialized sub-agents — one for Gmail, one for Google Calendar — each with its own toolset. Conversational memory keeps context across turns.
 
-![Multi-Agent Gmail & Calendar Assistant) (<img width="1616" height="813" alt="Workflow Screenshot" src="https://github.com/user-attachments/assets/64e7b3b8-5d0f-4d7b-862b-d8856a11d32a" />
-)
+![Multi-Agent Gmail & Calendar Assistant) <img width="1616" height="813" alt="Workflow Screenshot" src="https://github.com/user-attachments/assets/64e7b3b8-5d0f-4d7b-862b-d8856a11d32a" />
 
 ## How It Works
 
